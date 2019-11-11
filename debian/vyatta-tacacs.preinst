@@ -1,0 +1,9 @@
+#!/bin/bash
+
+set -eu
+
+# add groups for TACACS+
+G="vyatta.system.user.tacplus"
+if ! getent group $G >/dev/null; then
+    addgroup --force-badname --system $G
+fi

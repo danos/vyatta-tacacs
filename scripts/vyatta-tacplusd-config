@@ -1,0 +1,20 @@
+#!/usr/bin/perl
+#
+# Copyright (c) 2018-2019 AT&T Intellectual Property.
+# All rights reserved.
+#
+# SPDX-License-Identifier: GPL-2.0-only
+#
+
+use strict;
+use warnings;
+
+use lib "/opt/vyatta/share/perl5";
+use Vyatta::Login::TacplusServer;
+
+my $exists = Vyatta::Login::TacplusServer::check_tacplus_status();
+
+if ($exists) {
+    Vyatta::Login::TacplusServer::setup_tacacs_path("changed");
+    Vyatta::Login::TacplusServer::setup_tacplusd("changed", $exists);
+}

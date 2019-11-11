@@ -1,0 +1,4 @@
+scripts/show-tacplus-status.py opt/vyatta/sbin
+scripts/vyatta_system_update_aaa_tacplus opt/vyatta/sbin
+scripts/vyatta-tacplusd-config opt/vyatta/sbin
+lib/Vyatta opt/vyatta/share/perl5

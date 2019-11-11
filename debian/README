@@ -1,0 +1,6 @@
+The Debian Package vyatta-tacacs
+----------------------------
+
+This package has the Vyatta configuration and operational templates and
+scripts for TACACS+ client
+

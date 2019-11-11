@@ -1,0 +1,3 @@
+templates/show opt/vyatta/share/vyatta-op/templates
+yang/vyatta-system-tacplus-v1.yang usr/share/configd/yang
+

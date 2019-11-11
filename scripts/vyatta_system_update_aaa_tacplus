@@ -1,0 +1,82 @@
+#!/usr/bin/env python3
+#
+# Copyright (c) 2018-2019 AT&T Intellectual Property.
+# All rights reserved.
+#
+# SPDX-License-Identifier: GPL-2.0-only
+#
+
+""" Assemble configd/opd AAA plugin configuration files. """
+
+import json
+import os
+import sys
+import syslog
+
+from vyatta import configd
+
+CMD_AUTHOR = 'command-authorization'
+CMD_ACCT = 'command-accounting'
+TACPLUS_OPT_PATH = ['system', 'tacplus-options']
+
+CMD_AUTHOR_CFG_OPTS = CMD_AUTHOR+"-options"
+
+TACPLUS_CFG_PATH = '/etc/aaa-plugins/tacplus.json'
+
+DEFAULT_MASK = 0o177
+
+def generate_plugin_config(cfg):
+    """ encode cfg dictonary into JSON and dump it as file. """
+    old_umask = os.umask(DEFAULT_MASK)
+    with open(TACPLUS_CFG_PATH, 'w') as conf_fd:
+        json.dump(cfg, conf_fd)
+    os.umask(old_umask)
+
+def get_plugin_config():
+    """ Returns the current config from the plugin config file """
+
+    try:
+        with open(TACPLUS_CFG_PATH, 'r') as conf_file:
+            return json.load(conf_file)
+    except FileNotFoundError:
+        pass
+    except (IOError, ValueError) as exc:
+        syslog.syslog(syslog.LOG_WARNING,
+                      "Failed to read plugin config: {}".format(exc))
+
+    return None
+
+def main():
+    """
+    Query candidate configuration and only regenerate the configuration on
+    changes.
+    """
+
+    cfg = {'name': 'tacplus'}
+
+    try:
+        client = configd.Client()
+    except configd.FatalException as fatal_exec:
+        print("can't connect to configd: {}".format(fatal_exec), file=sys.stderr)
+        sys.exit(1)
+
+    if client.node_exists(client.AUTO, " ".join(TACPLUS_OPT_PATH)):
+        cfg_tree = client.tree_get_dict(TACPLUS_OPT_PATH).get(
+                        TACPLUS_OPT_PATH[-1], {})
+
+        for attr in [CMD_ACCT, CMD_AUTHOR]:
+            cfg[attr] = attr in cfg_tree
+
+        if cfg[CMD_AUTHOR] and "attributes" in cfg_tree[CMD_AUTHOR]:
+            cfg[CMD_AUTHOR_CFG_OPTS] = {}
+            cfg[CMD_AUTHOR_CFG_OPTS]["service"] = \
+                cfg_tree[CMD_AUTHOR]["attributes"].get("service", "vyatta-exec")
+
+    cur_cfg = get_plugin_config()
+    if cur_cfg is None or cur_cfg != cfg:
+        generate_plugin_config(cfg)
+        os.system('systemctl reload vyatta-opd')
+
+
+if __name__ == '__main__':
+    main()

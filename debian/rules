@@ -1,0 +1,33 @@
+#!/usr/bin/make -f
+
+export DH_GOPKG := eng.vyatta.net/tacplus
+
+GOBUILDDIR := _build
+BUILD_ARGS_GO := -gcflags=-trimpath="$$GOPATH/src" -asmflags=-trimpath="$$GOPATH/src"
+
+%:
+	dh $@ --with systemd,yang,golang --buildsystem=golang --builddirectory=$(GOBUILDDIR)
+
+override_dh_auto_build: vet
+	# configd/opd AAA plugin
+	cd $(GOBUILDDIR)/src; \
+	GOPATH=$(CURDIR)/$(GOBUILDDIR) \
+	go build $(BUILD_ARGS_GO) -buildmode=plugin \
+		-o tacplus.so eng.vyatta.net/tacplus/aaa-plugin/
+
+
+# Don't start any daemon by default. This is up to configd.
+override_dh_systemd_enable:
+	dh_systemd_enable --name=tacplusd@ --no-enable
+
+override_dh_installinit:
+	dh_installinit --no-start
+
+override_dh_systemd_start:
+	dh_systemd_start --no-start
+
+override_dh_strip:
+	dh_strip -X/opt/vyatta/lib/aaa-plugins/tacplus.so
+
+vet:
+	go tool vet $$(find . -type f -name \*.go | xargs dirname | sort -u | grep -v "/vendor/");

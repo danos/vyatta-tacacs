@@ -1,0 +1,73 @@
+Source: vyatta-tacacs
+Section: contrib/net
+Priority: extra
+Maintainer: Vyatta Package Maintainers <DL-vyatta-help@att.com>
+Build-Depends: debhelper (>= 9),
+         golang (>=2:1.4),
+         golang-dbus-dev,
+         golang-github-danos-utils-pathutil-dev,
+         dh-golang,
+         dh-systemd,
+         dh-yang
+Standards-Version: 3.9.8
+
+Package: vyatta-tacacs
+Architecture: all
+Depends: vyatta-system | vyatta-cfg-system,
+         vyatta-cfg,
+         vyatta-sssd-cfg,
+         libnet-ip-perl,
+         libpam-runtime (>= 1.0.5),
+         libreadonly-perl,
+         tacplusd (>= 1.14),
+         libvyatta-interface-perl (>= 1.66),
+         libvyatta-dscp-perl,
+         libpam-runtime (>= 1.0.5),
+         python3-dbus, python3,
+         ${misc:Depends},
+         ${perl:Depends}
+Provides: tacplus
+Replaces: tacplus
+Conflicts: tacplus
+Description: Vyatta configuration/operational commands for TACACS+
+ login services.
+
+Package: vyatta-tacplus-aaa-plugin
+Architecture: any
+Depends: ${misc:Depends}, ${shlibs:Depends},
+         configd,
+         vyatta-opd,
+Description: Vyatta TACACS+ AAA plugin for configd/opd
+ AAA plugin of the TACACS+ subsystem for configd/opd.
+
+Package: vyatta-system-tacplus-v1-yang
+Architecture: all
+Depends: vyatta-cfg (>= 1.16),
+         vyatta-tacacs (>= ${source:Version}),
+         vyatta-tacplus-aaa-plugin (>= ${source:Version}),
+         ${yang:Depends},
+         ${misc:Depends}
+Replaces: vyatta-tacacs (<< 0.3.22)
+Conflicts: vyatta-tacacs (<< 0.3.22)
+Description: vyatta-system-tacplus-v1 module
+ The YANG module for vyatta-system-tacplus-v1
+
+Package: vyatta-system-tacplus-routing-instance-v1-yang
+Architecture: all
+Depends: chvrf,
+         vyatta-tacacs (>= ${source:Version}),
+         vyatta-tacplus-aaa-plugin (>= ${source:Version}),
+         ${yang:Depends},
+         ${misc:Depends},
+         systemd
+Description: vyatta-system-tacplus-routing-instance-v1 module
+ The YANG module for vyatta-system-tacplus-routing-instance-v1
+
+Package: vyatta-system-tacplus-broadcast-v1-yang
+Architecture: all
+Depends: vyatta-tacacs (>= ${source:Version}),
+         vyatta-tacplus-aaa-plugin (>= ${source:Version}),
+         ${yang:Depends},
+         ${misc:Depends}
+Description: vyatta-system-tacplus-broadcast-v1 module
+ The YANG module for vyatta-system-tacplus-broadcast-v1

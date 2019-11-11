@@ -1,0 +1,17 @@
+[Unit]
+Description=Tacacs+ D-Bus Daemon
+Conflicts=tacplusd.service
+
+[Service]
+Type=forking
+EnvironmentFile=/var/run/tacplus.env
+ExecReload=/bin/kill -SIGHUP $MAINPID
+ExecStart=/usr/sbin/chvrf $VRF /usr/sbin/tacplusd $CONFIG /run/tacplusd-%i.pid
+KillSignal=SIGTERM
+PIDFile=/run/tacplusd-%i.pid
+Restart=on-failure
+# should be maximum socket timeout permitted
+TimeoutStopSec=30
+
+[Install]
+WantedBy=multi-user.target

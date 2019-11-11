@@ -1,0 +1,2 @@
+help: Show tacplus status
+run: ${vyatta_sbindir}/show-tacplus-status.py
