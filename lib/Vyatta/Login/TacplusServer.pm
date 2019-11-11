@@ -242,11 +242,14 @@ sub setup_tacplusd {
 
 sub setup_sssd_tacplus {
     my ($status, $chain_prio, $enforce, $vrf_exists) = @_;
+
     my $temp_status = $status;
     $temp_status = "added"
         if ($temp_status eq "deleted" && $vrf_exists);
-    my $rc = system("$SSSD_TACPLUS_SCRIPT $temp_status 2>&1");
-    die "Updating SSSD for TACACS+ configuration failed:\n$rc" if ($?);
+    if ($temp_status ne "deleted") {
+        my $rc = system("$SSSD_TACPLUS_SCRIPT $temp_status 2>&1");
+        die "Updating SSSD for TACACS+ configuration failed:\n$rc" if ($?);
+    }
 
     remove_pam_tacplus();
     my $rconfig = Vyatta::Config->new($TACACS_PATH);
@@ -255,7 +258,7 @@ sub setup_sssd_tacplus {
     if ( ($status ne "disable") && ($vrf_exists || $count > 0) ) {
          my $PAM_AUTH_UPDATE_PARAM = "$chain_prio";
          $PAM_AUTH_UPDATE_PARAM = "$PAM_AUTH_UPDATE_PARAM enforce" if defined($enforce);
-         $rc = system("$PAM_AUTH_UPDATE_TACACS $PAM_AUTH_UPDATE_PARAM 2>&1");
+         my $rc = system("$PAM_AUTH_UPDATE_TACACS $PAM_AUTH_UPDATE_PARAM 2>&1");
          die "Updating PAM auth configuration or TACACS+ failed:\n$rc" if ($?);
     }
     return;

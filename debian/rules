@@ -3,7 +3,20 @@
 export DH_GOPKG := eng.vyatta.net/tacplus
 
 GOBUILDDIR := _build
-BUILD_ARGS_GO := -gcflags=-trimpath="$$GOPATH/src" -asmflags=-trimpath="$$GOPATH/src"
+GO_PATH := $(CURDIR)/$(GOBUILDDIR)
+
+# From version 1.38 onwards, dh-golang inserts the all/trimpath flags into
+# any build that is not manually overridden.  We therefore need to match this
+# for the plugins to load - if we don't, they will fail to load due to a
+# package mismatch error (which in reality means the path to the common yang
+# repo is different prior to the GOPATH root directory).
+#
+# Prior to version 1.38, dh-golang does not use these flags, so we don't
+# either.  This requires that we use GOBUILDDIR in both plugin and plugin-
+# using code so the paths match, which is fragile, but proven to work.
+#
+DH_GOLANG_VER := $(shell dpkg-query -W -f='$${Version}' dh-golang)
+BUILD_ARGS_GO := $(if $(shell dpkg --compare-versions $(DH_GOLANG_VER) ge 1.38 && echo true),-gcflags=all=-trimpath="$(GO_PATH)/src" -asmflags=all=-trimpath="$(GO_PATH)/src",)
 
 %:
 	dh $@ --with systemd,yang,golang --buildsystem=golang --builddirectory=$(GOBUILDDIR)
@@ -11,7 +24,7 @@ BUILD_ARGS_GO := -gcflags=-trimpath="$$GOPATH/src" -asmflags=-trimpath="$$GOPATH
 override_dh_auto_build: vet
 	# configd/opd AAA plugin
 	cd $(GOBUILDDIR)/src; \
-	GOPATH=$(CURDIR)/$(GOBUILDDIR) \
+	GOPATH=$(GO_PATH) \
 	go build $(BUILD_ARGS_GO) -buildmode=plugin \
 		-o tacplus.so eng.vyatta.net/tacplus/aaa-plugin/
 

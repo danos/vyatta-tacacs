@@ -16,13 +16,11 @@ import (
 	"runtime/debug"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/godbus/dbus"
 )
-
-var busObj dbus.BusObject
-var isEnabled bool
 
 const AAAPluginsCfgfile = "/etc/aaa-plugins/tacplus.json"
 
@@ -35,19 +33,25 @@ type PluginConfig struct {
 }
 
 type plugin struct {
-	cfg PluginConfig
+	cfg      PluginConfig
+	conn     *dbus.Conn
+	busObj   dbus.BusObject
+	busMutex sync.Mutex
 }
 
 const (
 	pluginName = "tacplus"
 	logPrefix  = "[tacplus]"
 
+	accountSendMethod = "cmd_account_send"
+	authorSendMethod  = "cmd_author_send"
+
 	tacplusGroup           = "vyatta.system.user.tacplus"
 	tacplusDBusInterface   = "net.vyatta.tacplus"
 	tacplusDBusDestination = "net.vyatta.tacplus"
 	tacplusDBusObjectPath  = "/net/vyatta/tacplus"
-	tacplusAccountSend     = tacplusDBusInterface + ".cmd_account_send"
-	tacplusAuthorSend      = tacplusDBusInterface + ".cmd_author_send"
+	tacplusAccountSend     = tacplusDBusInterface + "." + accountSendMethod
+	tacplusAuthorSend      = tacplusDBusInterface + "." + authorSendMethod
 
 	tacplusMandatoryAvSep = "="
 
@@ -115,16 +119,59 @@ func (p *plugin) loadCfg() {
 	p.cfg = cfg
 }
 
+// Note: this method must be called with p.busMutex held
+func (p *plugin) openBusConn() error {
+	if p.conn != nil {
+		return nil
+	}
+
+	c, err := dbus.SystemBusPrivate()
+	if err != nil {
+		return fmt.Errorf("Failed to connect to D-Bus System Bus: %s", err)
+	}
+
+	err = c.Auth(nil)
+	if err != nil {
+		return fmt.Errorf("Failed to authenticate to D-Bus System Bus: %s", err)
+	}
+
+	err = c.Hello()
+	if err != nil {
+		return fmt.Errorf("Hello on D-Bus System Bus failed: %s", err)
+	}
+
+	p.conn = c
+	p.busObj = p.conn.Object(tacplusDBusDestination,
+		dbus.ObjectPath(tacplusDBusObjectPath))
+	return nil
+}
+
+// Note: this method must be called with p.busMutex held
+func (p *plugin) closeBusConn() error {
+	err := p.conn.Close()
+	p.conn = nil
+	return err
+}
+
 func (p *plugin) Setup() error {
 	p.loadCfg()
 
-	conn, err := dbus.SystemBus()
+	p.busMutex.Lock()
+	err := p.openBusConn()
+	p.busMutex.Unlock()
+
 	if err != nil {
-		e := fmt.Errorf("Failed to connect to D-Bus System Bus: %s", err)
-		return e
+		p.log("Continuing after error on plugin setup: %s", err)
 	}
-	busObj = conn.Object(tacplusDBusDestination, dbus.ObjectPath(tacplusDBusObjectPath))
 	return nil
+}
+
+// Note: this method must be called with p.busMutex held
+func (p *plugin) restart() error {
+	if err := p.closeBusConn(); err != nil {
+		p.log(fmt.Sprintf("Error closing bus connection on restart: %s", err))
+	}
+	return p.openBusConn()
 }
 
 func lookupUserByUid(uid uint32) (*user.User, error) {
@@ -154,6 +201,71 @@ func redactPath(path []string, pathAttrs *pathutil.PathAttrs) ([]string, error) 
 	return rpath, nil
 }
 
+func dbusMethodCallError(method string, err error) error {
+	if err == nil {
+		return nil
+	}
+	return fmt.Errorf("D-Bus %s failed: %s", method, err)
+}
+
+func (p *plugin) doAccountSend(
+	username,
+	tty,
+	rhost string,
+	args map[string]string,
+	path []string,
+) error {
+	/*
+	 * The return value indicating success/failure of the accounting transaction is
+	 * not particularly useful. We would simply log it but failures are already logged
+	 * by the TACACS+ provider so it's fairly pointless. Therefore to help with scale
+	 * we call account_send() asynchronously and discard the reply.
+	 *
+	 * "isssa{ss}as" -> flags, username, tty, rhost, array of attribute/value string pairs,
+	 *                  array of command args
+	 */
+	call := p.busObj.Go(tacplusAccountSend, dbus.FlagNoReplyExpected, nil,
+		TAC_PLUS_ACCT_FLAG_STOP, username, tty, rhost, args, path)
+	return call.Err
+}
+
+func (p *plugin) accountSend(
+	user *user.User,
+	tty,
+	rhost string,
+	args map[string]string,
+	path []string,
+) error {
+	var err error
+
+	defer func() {
+		if err != nil {
+			p.syslog(syslog.LOG_ERR, "Failed to account command %v with context "+
+				"%v for user %s (%s): %s", path, args, user.Username, user.Uid, err)
+		}
+	}()
+
+	p.busMutex.Lock()
+	defer p.busMutex.Unlock()
+	err = p.openBusConn()
+	if err != nil {
+		return dbusMethodCallError(accountSendMethod, err)
+	}
+
+	err = p.doAccountSend(user.Username, tty, rhost, args, path)
+	if err == dbus.ErrClosed {
+		p.log("D-Bus connection closed error on attempt to account command %v "+
+			"for user %s (%s)", path, user.Username, user.Uid)
+
+		err = p.restart()
+		if err == nil {
+			err = p.doAccountSend(user.Username, tty, rhost, args, path)
+		}
+	}
+
+	return dbusMethodCallError(accountSendMethod, err)
+}
+
 func (p *plugin) Account(context string, uid uint32, groups []string, path []string,
 	pathAttrs *pathutil.PathAttrs, env map[string]string) error {
 
@@ -180,26 +292,68 @@ func (p *plugin) Account(context string, uid uint32, groups []string, path []str
 		"stop_time": strconv.FormatInt(stop_time, 10),
 	}
 
-	/*
-	 * The return value indicating success/failure of the accounting transaction is
-	 * not particularly useful. We would simply log it but failures are already logged
-	 * by the TACACS+ provider so it's fairly pointless. Therefore to help with scale
-	 * we call account_send() asynchronously and discard the reply.
-	 *
-	 * "isssa{ss}" -> flags, username, tty, rhost, array of attribute/value string pairs
+	return p.accountSend(user, ttyName, rhost, args, path)
+}
+
+func (p *plugin) doAuthorSend(
+	username,
+	tty,
+	rhost string,
+	args map[string]string,
+	path []string,
+) (int32, map[string]string, error) {
+	var respType int32
+	var avDict map[string]string
+
+	/* "sssa{ss}as" -> username, tty, rhost, array of attribute/value string pairs
+	 *                 array of command args
 	 */
-	call := busObj.Go(tacplusAccountSend, dbus.FlagNoReplyExpected, nil,
-		TAC_PLUS_ACCT_FLAG_STOP, user.Username, ttyName, rhost, args, path)
-	if call.Err != nil {
-		return fmt.Errorf("D-Bus account_send failed: %s", call.Err)
+	err := p.busObj.Call(tacplusAuthorSend, 0, username, tty, rhost,
+		args, path).Store(&respType, &avDict)
+
+	return respType, avDict, err
+}
+
+func (p *plugin) authorSend(
+	user *user.User,
+	tty,
+	rhost string,
+	args map[string]string,
+	path []string,
+) (int32, map[string]string, error) {
+	var err error
+
+	defer func() {
+		if err != nil {
+			p.syslog(syslog.LOG_ERR, "Failed to authorize command %v with context "+
+				"%v for user %s (%s): %s", path, args, user.Username, user.Uid, err)
+		}
+	}()
+
+	p.busMutex.Lock()
+	defer p.busMutex.Unlock()
+	err = p.openBusConn()
+	if err != nil {
+		return -1, map[string]string{}, dbusMethodCallError(authorSendMethod, err)
 	}
-	return nil
+
+	respType, avDict, err := p.doAuthorSend(user.Username, tty, rhost, args, path)
+	if err == dbus.ErrClosed {
+		p.log("D-Bus connection closed error on attempt to authorize command %v "+
+			"for user %s (%s)", path, user.Username, user.Uid)
+
+		err = p.restart()
+		if err == nil {
+			respType, avDict, err = p.doAuthorSend(
+				user.Username, tty, rhost, args, path)
+		}
+	}
+
+	return respType, avDict, dbusMethodCallError(authorSendMethod, err)
 }
 
 func (p *plugin) Authorize(context string, uid uint32, groups []string, path []string,
 	pathAttrs *pathutil.PathAttrs) (bool, error) {
-	var respType int32
-	var avDict map[string]string
 	var result bool
 
 	p.debugStack("Authorization request for %v: uid:%v context:%v", path, uid, context)
@@ -227,12 +381,9 @@ func (p *plugin) Authorize(context string, uid uint32, groups []string, path []s
 		"protocol": context,
 	}
 
-	/* "sssa{ss}" -> username, tty, rhost, array of attribute/value string pairs */
-	err = busObj.Call(tacplusAuthorSend, 0, user.Username,
-		tty, rhost, args, path).Store(&respType, &avDict)
+	respType, avDict, err := p.authorSend(user, tty, rhost, args, path)
 	if err != nil {
-		e := fmt.Errorf("D-Bus author_send failed: %s", err)
-		return false, e
+		return false, err
 	}
 
 	switch respType {
