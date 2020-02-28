@@ -1,0 +1,14 @@
+#!/bin/bash
+
+# Copyright (c) 2020 AT&T Intellectual Property.
+# All rights reserved.
+#
+# SPDX-License-Identifier: GPL-2.0-only
+
+parent=$(pgrep -n '^sssd$')
+if [ -z "$parent" ]; then
+    echo "TACACS+ login services are not running"
+elif ! pkill -SIGUSR2 -P "$parent" -f vyatta_system_tacplus; then
+    echo "Failed to reset TACACS+ login services"
+    exit 1
+fi

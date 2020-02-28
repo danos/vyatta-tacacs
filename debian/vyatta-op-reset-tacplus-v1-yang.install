@@ -1,0 +1,2 @@
+scripts/vyatta-tacplus-login-reset opt/vyatta/sbin
+yang/vyatta-op-reset-tacplus-v1.yang usr/share/configd/yang

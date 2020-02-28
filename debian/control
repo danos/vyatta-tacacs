@@ -46,6 +46,12 @@ Depends: vyatta-tacacs (>= ${source:Version}), ${yang:Depends}, ${misc:Depends}
 Description: vyatta-op-show-tacplus-v1 YANG module
  Operational show CLI for TACACS+
 
+Package: vyatta-op-reset-tacplus-v1-yang
+Architecture: all
+Depends: procps, ${yang:Depends}, ${misc:Depends}
+Description: vyatta-op-reset-tacplus-v1 YANG module
+ Operational reset CLI for TACACS+
+
 Package: vyatta-system-tacplus-v1-yang
 Architecture: all
 Depends: vyatta-cfg (>= 1.16),
