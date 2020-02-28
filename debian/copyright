@@ -7,7 +7,7 @@ License:   GPL-2
 Files:     debian/*
 Copyright: 2009-2012 Vyatta, Inc.
            2012-2016 Brocade Communications Systems, Inc.
-           2018-2019 AT&T Intellectual Property
+           2018-2020 AT&T Intellectual Property
 License:   GPL-2
 
 Files:     lib/Vyatta/Login/TacplusServer.pm
@@ -16,12 +16,8 @@ Copyright: 2018-2019 AT&T Intellectual Property.
            2007-2013 Vyatta, Inc.
 License:   GPL-2
 
-Files:     templates/* 
-Copyright: 2015 Brocade Communications Systems, Inc.
-License:   GPL-2
-
 Files: yang/*
-Copyright: 2017-2019 AT&T Intellectual Property.
+Copyright: 2017-2020 AT&T Intellectual Property.
            2014-2017 Brocade Communications Systems, Inc.
 License: BSD-3-clause
 

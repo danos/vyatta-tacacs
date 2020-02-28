@@ -29,8 +29,8 @@ Depends: vyatta-system | vyatta-cfg-system,
 Provides: tacplus
 Replaces: tacplus
 Conflicts: tacplus
-Description: Vyatta configuration/operational commands for TACACS+
- login services.
+Description: TACACS+ service integration
+ Libraries and scripts to support TACACS+ services.
 
 Package: vyatta-tacplus-aaa-plugin
 Architecture: any
@@ -40,9 +40,16 @@ Depends: ${misc:Depends}, ${shlibs:Depends},
 Description: Vyatta TACACS+ AAA plugin for configd/opd
  AAA plugin of the TACACS+ subsystem for configd/opd.
 
+Package: vyatta-op-show-tacplus-v1-yang
+Architecture: all
+Depends: vyatta-tacacs (>= ${source:Version}), ${yang:Depends}, ${misc:Depends}
+Description: vyatta-op-show-tacplus-v1 YANG module
+ Operational show CLI for TACACS+
+
 Package: vyatta-system-tacplus-v1-yang
 Architecture: all
 Depends: vyatta-cfg (>= 1.16),
+         vyatta-op-show-tacplus-v1-yang,
          vyatta-tacacs (>= ${source:Version}),
          vyatta-tacplus-aaa-plugin (>= ${source:Version}),
          ${yang:Depends},
