@@ -1,3 +1,4 @@
+scripts/1050-tacplus opt/vyatta/share/vyatta-op/functions/tech-support.d
 scripts/show-tacplus-status.py opt/vyatta/sbin
 scripts/vyatta_system_update_aaa_tacplus opt/vyatta/sbin
 scripts/vyatta-tacplusd-config opt/vyatta/sbin

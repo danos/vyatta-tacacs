@@ -1,0 +1,28 @@
+#!/bin/vcli -f
+#
+# Copyright (c) 2020, AT&T Intellectual Property.
+# All rights reserved.
+#
+# SPDX-License-Identifier: GPL-2.0-only
+
+source "$(cd "$(dirname "${0}")" && pwd -P)"/../tech-support.functions
+
+header TACACS+
+
+do_cmd run show system tacplus status
+
+if systemctl -q is-active sssd; then
+    if which sssctl > /dev/null; then
+        time_out "sssctl domain-status -o vyatta_system_tacplus"
+    fi
+fi
+
+# The act of doing tech support collection can result in a lot of tacplusd
+# logs if command based accounting and/or authorization is enabled. Therefore
+# collect debug logs separately to help avoid masking an earlier issue.
+do_cmd journalctl --no-pager -u tacplusd -n 250 -p info
+do_cmd journalctl --no-pager -u tacplusd -n 250 -p debug
+
+if [ -s /var/log/sssd/sssd_vyatta_system_tacplus.log ]; then
+    do_cmd tail -n 250 /var/log/sssd/sssd_vyatta_system_tacplus.log
+fi
