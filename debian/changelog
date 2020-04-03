@@ -1,3 +1,12 @@
+vyatta-tacacs (1.27) unstable; urgency=medium
+
+  * debian/rules: remove override_dh_strip
+  * Add tech support script
+  * Convert "show system tacplus" defn to op YANG
+  * Add "reset system login tacplus" op command
+
+ -- Duncan Eastoe <duncan.eastoe@att.com>  Fri, 03 Apr 2020 10:28:57 +0100
+
 vyatta-tacacs (1.26) unstable; urgency=medium
 
   * DANOS Import master
