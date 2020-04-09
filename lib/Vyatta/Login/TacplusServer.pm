@@ -1,6 +1,6 @@
 # **** License ****
 #
-# Copyright (c) 2018-2019, AT&T Intellectual Property.
+# Copyright (c) 2018-2020, AT&T Intellectual Property.
 # All rights reserved.
 #
 # Copyright (c) 2014-2016 Brocade Communications Systems, Inc.
@@ -310,12 +310,27 @@ sub write_name_env {
 }
 
 sub update {
-    my ($this, $status, $chain_prio, $enforce) = @_;
-    setup_tacacs_path($status);
+    my ($this, $status, $chain_prio, $enforce, $cfg_status) = @_;
+
+    # When $cfg_status is defined it indicates the state of a tacplus-server
+    # config tree, in any routing instance, with one of the values: added,
+    # deleted, changed, static.
+    #
+    # $status is always defined and indicates the same config status, except
+    # in the case where an authentication method other than "tacplus" is being
+    # enforced by the auth-chain configuration. In this case $status is always
+    # "disabled" regardless of changes to any tacplus-server trees in the
+    # configuration. This can result in changes to tacplus-server configuration
+    # not taking effect.
+    #
+    # Therefore use $cfg_status in preference to $status, when it is defined,
+    # for the routines which apply tacplusd configuration.
+
+    setup_tacacs_path($cfg_status // $status);
     my $vrf_exists = check_tacplus_status();
     setup_sssd_tacplus($status, $chain_prio, $enforce, $vrf_exists);
 
-    setup_tacplusd($status, $vrf_exists);
+    setup_tacplusd($cfg_status // $status, $vrf_exists);
     return;
 }
 
