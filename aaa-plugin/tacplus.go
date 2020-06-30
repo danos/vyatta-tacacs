@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2019 AT&T Intellectual Property.
+// Copyright (c) 2018-2020 AT&T Intellectual Property.
 // All rights reserved.
 //
 // SPDX-License-Identifier: GPL-2.0-only
@@ -290,6 +290,7 @@ func (p *plugin) Account(context string, uid uint32, groups []string, path []str
 		"service":   "shell",
 		"protocol":  context,
 		"stop_time": strconv.FormatInt(stop_time, 10),
+		"timezone":  "UTC",
 	}
 
 	return p.accountSend(user, ttyName, rhost, args, path)
