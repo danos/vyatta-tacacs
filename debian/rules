@@ -19,7 +19,7 @@ DH_GOLANG_VER := $(shell dpkg-query -W -f='$${Version}' dh-golang)
 BUILD_ARGS_GO := $(if $(shell dpkg --compare-versions $(DH_GOLANG_VER) ge 1.38 && echo true),-gcflags=all=-trimpath="$(GO_PATH)/src" -asmflags=all=-trimpath="$(GO_PATH)/src",)
 
 %:
-	dh $@ --with systemd,yang,golang --buildsystem=golang --builddirectory=$(GOBUILDDIR)
+	dh $@ --with yang,golang --buildsystem=golang --builddirectory=$(GOBUILDDIR)
 
 override_dh_auto_build: vet
 	# configd/opd AAA plugin
@@ -27,17 +27,6 @@ override_dh_auto_build: vet
 	GOPATH=$(GO_PATH) \
 	go build $(BUILD_ARGS_GO) -buildmode=plugin \
 		-o tacplus.so eng.vyatta.net/tacplus/aaa-plugin/
-
-
-# Don't start any daemon by default. This is up to configd.
-override_dh_systemd_enable:
-	dh_systemd_enable --name=tacplusd@ --no-enable
-
-override_dh_installinit:
-	dh_installinit --no-start
-
-override_dh_systemd_start:
-	dh_systemd_start --no-start
 
 vet:
 	go tool vet $$(find . -type f -name \*.go | xargs dirname | sort -u | grep -v "/vendor/");

@@ -203,38 +203,22 @@ sub setup_tacplusd {
         close($env);
     }
 
-    if ($TACACS_VRF ne "default") {
-        if (!-d "/run/systemd/system") {
-            die "Cannot start tacacs daemon: Requires systemd";
-        }
-
-        #Just before starting tacplusd in a routing-instance,
-        #stop the tacplusd in default RD if it's running there
-        system("service", $TACPLUSD, "stop");
-        if ( $gstatus eq "added" && $#VRFS != 0 ) {
-            for my $instance (@VRFS) {
-                if ($instance ne "default") {
-                    system("service", "$TACPLUSD\@$instance", "stop");
-                }
-            }
-        }
-    }
-
-    my $TACACS_DAEMON = $TACPLUSD;
-    $TACACS_DAEMON .= "@".$TACACS_VRF unless ($TACACS_VRF eq "default");
-
     if ($gstatus eq "added") {
-        system("service", $TACACS_DAEMON, "start");
+        # Initial TACACS+ config has been added, or it has switched VRFs.
+        # We need to start tacplusd for the former; restart for the latter.
+        # The "restart" command covers both cases.
+        system("service", $TACPLUSD, "restart");
     }
-    elsif ($gstatus eq "deleted") {
-        system("service", $TACACS_DAEMON, "stop");
-    }
-    elsif ($gstatus eq "changed") {
-        if (-e "$TACACS_PID-$TACACS_VRF.pid") {
-            system("service", $TACACS_DAEMON, "reload")
+    elsif (scalar @VRFS == 1 || (scalar @VRFS == 2 && $VRFS[0] eq $VRFS[1])) {
+        # tacplusd only gets stopped or reloaded when config changes affect
+        # a single VRF (ie. TACACS+ is not moving VRF, which is the general case).
+
+        if ($gstatus eq "deleted") {
+            system("service", $TACPLUSD, "stop");
         }
         else {
-            system("service", $TACACS_DAEMON, "start");
+            # Attempt a reload, if tacplusd is not running then start it.
+            system("systemctl", "reload-or-restart", $TACPLUSD);
         }
     }
     unlink($TACACS_TMP);

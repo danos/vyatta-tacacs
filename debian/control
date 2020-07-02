@@ -7,7 +7,6 @@ Build-Depends: debhelper (>= 9),
          golang-dbus-dev,
          golang-github-danos-utils-pathutil-dev,
          dh-golang,
-         dh-systemd,
          dh-yang
 Standards-Version: 3.9.8
 
@@ -19,7 +18,7 @@ Depends: vyatta-system | vyatta-cfg-system,
          libnet-ip-perl,
          libpam-runtime (>= 1.0.5),
          libreadonly-perl,
-         tacplusd (>= 1.14),
+         tacplusd (>= 1.22),
          libvyatta-interface-perl (>= 1.66),
          libvyatta-dscp-perl,
          libpam-runtime (>= 1.0.5),
