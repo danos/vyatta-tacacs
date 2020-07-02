@@ -47,6 +47,9 @@ Readonly my $PAM_AUTH_UPDATE_TACACS_CONF => "/usr/share/pam-configs/vyatta-sssd-
 Readonly my $TACACS_ENV => "/var/run/tacplus.env";
 Readonly my $TACPLUSD => 'tacplusd';
 
+my (undef, undef, $TACPLUSD_UID, undef) = getpwnam("tacplusd")
+    or die("tacplusd user does not exist!");
+
 my $TACACS_PATH;
 my $TACACS_VRF;
 my @VRFS = ();
@@ -191,6 +194,8 @@ sub setup_tacplusd {
     if ( compare( "$TACACS_CFG\-$TACACS_VRF", $TACACS_TMP ) != 0 ) {
         cp ($TACACS_TMP, "$TACACS_CFG\-$TACACS_VRF")
             or die "Install of $TACACS_TMP to $TACACS_CFG failed";
+        chown($TACPLUSD_UID, -1, "$TACACS_CFG\-$TACACS_VRF")
+            or die "Failed to chown $TACACS_CFG\-$TACACS_VRF: $!";
     }
 
     if (scalar @servers > 0) {
