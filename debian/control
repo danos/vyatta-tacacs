@@ -33,6 +33,7 @@ Description: TACACS+ service integration
 
 Package: vyatta-tacplus-aaa-plugin
 Architecture: any
+Built-Using: ${misc:Built-Using}
 Depends: ${misc:Depends}, ${shlibs:Depends},
          configd,
          vyatta-opd,
