@@ -71,7 +71,8 @@ module vyatta-system-tacplus-v1 {
 			"Add tacplus-common-server-options grouping.
 			 Add global server port, secret, and timeout configuration.
 			 Add configuration to disable individual TACACS+ servers.
-			 Allow whitespace in secrets.";
+			 Allow whitespace in secrets.
+			 Increase maximum timeout to 120 seconds";
 	}
 
 	revision 2019-05-06 {
@@ -140,8 +141,9 @@ module vyatta-system-tacplus-v1 {
 		}
 		leaf timeout {
 			type uint32 {
-				range 1..30;
+				range 1..120;
 			}
+			units seconds;
 			configd:help "Timeout for TACACS+ session";
 			description "Timeout for TACACS+ session";
 		}
