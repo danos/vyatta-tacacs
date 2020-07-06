@@ -70,7 +70,8 @@ module vyatta-system-tacplus-v1 {
 		description
 			"Add tacplus-common-server-options grouping.
 			 Add global server port, secret, and timeout configuration.
-			 Add configuration to disable individual TACACS+ servers.";
+			 Add configuration to disable individual TACACS+ servers.
+			 Allow whitespace in secrets.";
 	}
 
 	revision 2019-05-06 {
@@ -128,8 +129,9 @@ module vyatta-system-tacplus-v1 {
 		leaf secret {
 			type string {
 				length 1..64;
-				pattern "[!-~]+" {
-					error-message "Secret must not contain space";
+				configd:pattern-help "<printable-ascii>";
+				pattern "[ -~]+" {
+					error-message "Secret must consist of printable ASCII characters";
 				}
 			}
 			configd:help "Secret for TACACS+ access";
