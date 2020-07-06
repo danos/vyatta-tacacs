@@ -165,6 +165,7 @@ sub setup_tacplusd {
         my $status = $serverStatus{$server};
 
         next if ( $status eq 'deleted' );
+        next if ( $rconfig->exists("$server disable") );
 
         my $port    = $rconfig->returnValue("$server port") // $global_port;
 

@@ -2,7 +2,7 @@
 
 # Module: show-tacplus-status.py
 #
-# Copyright (c) 2018-2019 AT&T Intellectual Property.
+# Copyright (c) 2018-2020 AT&T Intellectual Property.
 # All rights reserved.
 #
 # Copyright (c) 2015-2016 Brocade Comunications Systems, Inc.
@@ -208,4 +208,7 @@ for vals in status_list:
                                 failed_connects, active, hold_down)
     addServer(tacacsServer)
 
-printEachServer()
+if allServers:
+    printEachServer()
+else:
+    print('No TACACS+ servers are enabled')

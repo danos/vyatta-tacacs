@@ -69,7 +69,8 @@ module vyatta-system-tacplus-v1 {
 	revision 2020-07-06 {
 		description
 			"Add tacplus-common-server-options grouping.
-			 Add global server port, secret, and timeout configuration.";
+			 Add global server port, secret, and timeout configuration.
+			 Add configuration to disable individual TACACS+ servers.";
 	}
 
 	revision 2019-05-06 {
@@ -222,6 +223,12 @@ module vyatta-system-tacplus-v1 {
 			leaf tagnode {
 				type types:ip-address;
 				configd:help "TACACS+ server address";
+			}
+			leaf disable {
+				type empty;
+				configd:help "Prevent use of this server for transactions";
+				description
+					"Prevents this server from being used for any TACACS+ transactions";
 			}
 			leaf source-address {
 				type types:ip-address;
