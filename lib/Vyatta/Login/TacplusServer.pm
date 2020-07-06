@@ -140,8 +140,7 @@ sub setup_tacplusd {
     chmod(0600, $cfg);
 
     print $cfg "# TACACS+ configuration file\n",
-               "# automatically generated do not edit\n",
-               "# Server\tSecret\tTimeout\n";
+               "# automatically generated do not edit\n";
 
     print $cfg "\n[general]\n";
 
@@ -153,6 +152,10 @@ sub setup_tacplusd {
     printf $cfg "Dscp=%s\n", dscp_val_to_dec(
         $rconfig->returnValue("$TACACS_GLOBAL_PATH dscp") // "cs6");
 
+    my $global_port = $rconfig->returnValue("$TACACS_GLOBAL_PATH port");
+    my $global_secret = $rconfig->returnValue("$TACACS_GLOBAL_PATH secret");
+    my $global_timeout = $rconfig->returnValue("$TACACS_GLOBAL_PATH timeout");
+
     $rconfig->setLevel($TACACS_PATH);
     my @servers = $rconfig->listNodes();
     my %serverStatus = $rconfig->listNodeStatus();
@@ -163,13 +166,13 @@ sub setup_tacplusd {
 
         next if ( $status eq 'deleted' );
 
-        my $port    = $rconfig->returnValue("$server port");
+        my $port    = $rconfig->returnValue("$server port") // $global_port;
 
-        my $secret  = $rconfig->returnValue("$server secret");
+        my $secret  = $rconfig->returnValue("$server secret") // $global_secret;
         die "Missing secret for $server\n"
             unless $secret;
 
-        my $timeout = $rconfig->returnValue("$server timeout");
+        my $timeout = $rconfig->returnValue("$server timeout") // $global_timeout;
         die "Missing timeout for $server\n"
             unless $timeout;
 

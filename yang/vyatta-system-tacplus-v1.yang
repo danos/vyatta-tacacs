@@ -67,7 +67,9 @@ module vyatta-system-tacplus-v1 {
 		 The YANG module for vyatta-system-tacplus-v1";
 
 	revision 2020-07-06 {
-		description "Add tacplus-common-server-options grouping";
+		description
+			"Add tacplus-common-server-options grouping.
+			 Add global server port, secret, and timeout configuration.";
 	}
 
 	revision 2019-05-06 {
@@ -120,7 +122,7 @@ module vyatta-system-tacplus-v1 {
 				range 1..65535;
 			}
 			configd:help "TACACS+ server port";
-			default "49";
+			description "TACACS+ server port";
 		}
 		leaf secret {
 			type string {
@@ -129,22 +131,21 @@ module vyatta-system-tacplus-v1 {
 					error-message "Secret must not contain space";
 				}
 			}
-			configd:help "Secret for TACACS+ access [REQUIRED]";
+			configd:help "Secret for TACACS+ access";
+			description "Secret used to obfuscate payload of TACACS+ transactions";
 			configd:secret "true";
-			mandatory true;
 		}
 		leaf timeout {
 			type uint32 {
 				range 1..30;
 			}
 			configd:help "Timeout for TACACS+ session";
-			default "3";
+			description "Timeout for TACACS+ session";
 		}
 	}
 
 	augment /system:system {
 		container tacplus-options {
-			presence "TACACS+ options have been configured";
 			configd:end "/opt/vyatta/sbin/vyatta_system_update_aaa_tacplus";
 			description 'TACACS+ parameters allow individual TACACS+ AAA functionality
 					to be enabled.
@@ -198,12 +199,23 @@ module vyatta-system-tacplus-v1 {
 					description "The IP DSCP value used for TACACS+ packets";
 					default cs6;
 				}
+				uses tacplus-common-server-options{
+					refine port {
+						default 49;
+					}
+					refine timeout {
+						default 3;
+					}
+				}
 			}
 		}
 	}
 	grouping tacplus-system-login-grouping {
 		list tacplus-server {
 			configd:help "TACACS+ server address";
+			must "secret or ../../tacplus-options/server/secret" {
+				error-message "A global or server specific secret must be configured";
+			}
 			max-elements 100;
 			ordered-by "user";
 			key "tagnode";
