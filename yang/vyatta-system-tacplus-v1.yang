@@ -66,14 +66,15 @@ module vyatta-system-tacplus-v1 {
 
 		 The YANG module for vyatta-system-tacplus-v1";
 
-	revision 2020-08-05 {
+	revision 2020-08-12 {
 		description
 			"Add tacplus-common-server-options grouping.
 			 Add global server port, secret, and timeout configuration.
 			 Add configuration to disable individual TACACS+ servers.
 			 Allow whitespace in secrets.
 			 Increase maximum timeout to 120 seconds.
-			 Add support for command accounting start records.";
+			 Add support for command accounting start records.
+			 Add offline-timer configuration.";
 	}
 
 	revision 2019-05-06 {
@@ -153,6 +154,7 @@ module vyatta-system-tacplus-v1 {
 	augment /system:system {
 		container tacplus-options {
 			configd:end "/opt/vyatta/sbin/vyatta_system_update_aaa_tacplus";
+			configd:end "vyatta-tacplusd-config";
 			description 'TACACS+ parameters allow individual TACACS+ AAA functionality
 					to be enabled.
 
@@ -204,8 +206,32 @@ module vyatta-system-tacplus-v1 {
 					}
 				}
 			}
+			leaf offline-timer {
+				configd:help "Suspend TACACS+ operations after failure of all servers";
+				description
+					"If the system experiences a failure attempting to connect to
+					 all configured servers then TACACS+ operations will be suspended
+					 for a minimum of the period configured here.
+
+					 If all servers are configured with a hold-down-timer, the offline-timer
+					 is only triggered once all hold-down-timers have also been triggered.
+					 TACACS+ operations will be suspended for the period configured here,
+					 or until the soonest expiring hold-down-timer expires, whichever is
+					 longer.
+
+					 If only a subset of, or no, TACACS+ servers have a configured
+					 hold-down-timer then TACACS+ operations are suspended for the
+					 offline-timer period immediately after failing to connect to
+					 all of the servers for a given AAA transaction. In the case where
+					 some servers have a hold-down-timer, an active hold down timer
+					 is considered a connection failure to the respective server.";
+				type uint32 {
+					range 0..3600;
+				}
+				units "seconds";
+				default 0;
+			}
 			container server {
-				configd:end "vyatta-tacplusd-config";
 				configd:help "Global TACACS+ server options";
 				description "Global TACACS+ server options";
 				leaf dscp {

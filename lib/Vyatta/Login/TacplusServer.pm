@@ -36,7 +36,8 @@ Readonly my $TACACS_CFG => "/etc/tacplus/server";
 Readonly my $TACACS_TMP => "/tmp/tacplus_server.$$";
 Readonly my $TACACS_PATH_DEFAULT => 'system login tacplus-server';
 Readonly my $TACACS_PATH_VRF => 'routing routing-instance';
-Readonly my $TACACS_GLOBAL_PATH => 'system tacplus-options server';
+Readonly our $TACACS_GLOBAL_PATH => 'system tacplus-options server';
+Readonly our $TACACS_OFFLINE_TIMER => 'system tacplus-options offline-timer';
 Readonly my $TACACS_ACCOUNTING_PATH => 'system tacplus-options command-accounting';
 Readonly my $TACACS_ACCOUNTING_BROADCAST_PATH => 'system tacplus-options accounting broadcast';
 
@@ -145,6 +146,9 @@ sub setup_tacplusd {
     print $cfg "\n[general]\n";
 
     printf $cfg "BroadcastAccounting=%s\n", ($rconfig->exists($TACACS_ACCOUNTING_BROADCAST_PATH) ? "true" : "false");
+
+    printf $cfg "OfflineTimer=%d\n",
+        ($rconfig->returnValue($TACACS_OFFLINE_TIMER) // 0);
 
     # eventually needs to be exposed
     printf $cfg "SetupTimeout=%d\n", 2;
