@@ -221,7 +221,7 @@ sub setup_tacplusd {
         if ($gstatus eq "deleted") {
             system("service", $TACPLUSD, "stop");
         }
-        else {
+        elsif ($gstatus eq "changed") {
             # Attempt a reload, if tacplusd is not running then start it.
             system("systemctl", "reload-or-restart", $TACPLUSD);
         }
