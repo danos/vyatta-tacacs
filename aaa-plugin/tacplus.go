@@ -26,8 +26,11 @@ import (
 const AAAPluginsCfgfile = "/etc/aaa-plugins/tacplus.json"
 
 type PluginConfig struct {
-	Enabled         bool `json:"enabled"`
-	Debug           bool `json:"debug"`
+	Enabled        bool `json:"enabled"`
+	Debug          bool `json:"debug"`
+	CmdAcctOptions struct {
+		StartRecords bool `json:"start-records"`
+	} `json:"command-accounting-options"`
 	CmdAuthzOptions struct {
 		Service string `json:"service"`
 	} `json:"command-authorization-options"`
@@ -60,20 +63,24 @@ const (
 	pluginName = "tacplus"
 	logPrefix  = "[tacplus]"
 
-	accountSendMethod = "cmd_account_send"
-	authorSendMethod  = "cmd_author_send"
+	getAcctTaskIdMethod = "get_account_task_id"
+	accountSendMethod   = "cmd_account_send"
+	authorSendMethod    = "cmd_author_send"
 
 	tacplusGroup           = "vyatta.system.user.tacplus"
 	tacplusDBusInterface   = "net.vyatta.tacplus"
 	tacplusDBusDestination = "net.vyatta.tacplus"
 	tacplusDBusObjectPath  = "/net/vyatta/tacplus"
+	tacplusGetAcctTaskId   = tacplusDBusInterface + "." + getAcctTaskIdMethod
 	tacplusAccountSend     = tacplusDBusInterface + "." + accountSendMethod
 	tacplusAuthorSend      = tacplusDBusInterface + "." + authorSendMethod
 
-	argProtocol = "protocol"
-	argService  = "service"
-	argStopTime = "stop_time"
-	argTimezone = "timezone"
+	argProtocol  = "protocol"
+	argService   = "service"
+	argStartTime = "start_time"
+	argStopTime  = "stop_time"
+	argTaskId    = "task_id"
+	argTimezone  = "timezone"
 
 	tacplusMandatoryAvSep = "="
 
@@ -88,7 +95,8 @@ const (
 	TAC_PLUS_ACCT_STATUS_ERROR   = 0x02
 	TAC_PLUS_ACCT_STATUS_FOLLOW  = 0x21
 
-	TAC_PLUS_ACCT_FLAG_STOP = 0x04
+	TAC_PLUS_ACCT_FLAG_START = 0x02
+	TAC_PLUS_ACCT_FLAG_STOP  = 0x04
 )
 
 var ignoredMandatoryArgs = map[string]bool{}
@@ -300,8 +308,19 @@ func (p *plugin) accountSend(
 }
 
 func (t task) AccountStart() error {
-	// Not supported
-	return nil
+	// Always cache the start time, if the start record fails we can
+	// still include it in the stop record.
+	t.args[argStartTime] = strconv.FormatInt(time.Now().Unix(), 10)
+
+	if !t.p.cfg.CmdAcctOptions.StartRecords {
+		t.p.debug("Command accounting start records are not enabled")
+		return nil
+	}
+
+	if _, exists := t.args[argTaskId]; !exists {
+		return fmt.Errorf("Unable to send accounting start record without task ID")
+	}
+	return t.p.accountSend(t.user, t.tty, t.rhost, t.args, t.path, TAC_PLUS_ACCT_FLAG_START)
 }
 
 func (t task) AccountStop(_ *error) error {
@@ -325,6 +344,29 @@ func (p *plugin) NewTask(context string, uid uint32, groups []string, path []str
 	t.user, err = lookupUserByUid(uid)
 	if err != nil {
 		return nil, err
+	}
+
+	// We must use the same task ID in the accounting start and stop records
+	// for a given command execution. Therefore if accounting start records are
+	// enabled fetch a task ID ahead of sending the requests.
+	//
+	// If this fails (unlikely) we will not attempt to issue a start record;
+	// otherwise tacplusd will allocate an ID, and there will be a mismatch
+	// with the stop record. However in this scenario we can still attempt to
+	// issue the stop record (again, tacplusd will allocate an ID for us) and
+	// this will include the start_time attribute that would have been used in
+	// the suppressed start record.
+	if p.cfg.CmdAcctOptions.StartRecords {
+		var taskId string
+		err := p.retryOnBusClosedErr(func() error {
+			return p.busObj.Call(tacplusGetAcctTaskId, 0).Store(&taskId)
+		}, nil)
+		if err != nil || taskId == "" {
+			p.syslog(syslog.LOG_WARNING, "Failed to allocate task ID for TACACS+ "+
+				"command accounting - start record will not be issued")
+		} else {
+			t.args[argTaskId] = taskId
+		}
 	}
 
 	t.args[argService] = "shell"
