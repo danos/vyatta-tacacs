@@ -258,6 +258,7 @@ func (p *plugin) doAccountSend(
 	rhost string,
 	args map[string]string,
 	path []string,
+	flags int32,
 ) error {
 	/*
 	 * The return value indicating success/failure of the accounting transaction is
@@ -269,7 +270,7 @@ func (p *plugin) doAccountSend(
 	 *                  array of command args
 	 */
 	call := p.busObj.Go(tacplusAccountSend, dbus.FlagNoReplyExpected, nil,
-		TAC_PLUS_ACCT_FLAG_STOP, username, tty, rhost, args, path)
+		flags, username, tty, rhost, args, path)
 	return call.Err
 }
 
@@ -279,11 +280,12 @@ func (p *plugin) accountSend(
 	rhost string,
 	args map[string]string,
 	path []string,
+	flags int32,
 ) error {
 
 	err := p.retryOnBusClosedErr(
 		func() error {
-			return p.doAccountSend(user.Username, tty, rhost, args, path)
+			return p.doAccountSend(user.Username, tty, rhost, args, path, flags)
 		},
 		func() {
 			p.log("D-Bus connection closed error on attempt to account command %v "+
@@ -304,7 +306,7 @@ func (t task) AccountStart() error {
 
 func (t task) AccountStop(_ *error) error {
 	t.args[argStopTime] = strconv.FormatInt(time.Now().Unix(), 10)
-	return t.p.accountSend(t.user, t.tty, t.rhost, t.args, t.path)
+	return t.p.accountSend(t.user, t.tty, t.rhost, t.args, t.path, TAC_PLUS_ACCT_FLAG_STOP)
 }
 
 func (p *plugin) NewTask(context string, uid uint32, groups []string, path []string,
