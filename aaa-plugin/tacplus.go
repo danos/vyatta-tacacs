@@ -53,6 +53,11 @@ const (
 	tacplusAccountSend     = tacplusDBusInterface + "." + accountSendMethod
 	tacplusAuthorSend      = tacplusDBusInterface + "." + authorSendMethod
 
+	argProtocol = "protocol"
+	argService  = "service"
+	argStopTime = "stop_time"
+	argTimezone = "timezone"
+
 	tacplusMandatoryAvSep = "="
 
 	tacplusCouldNotSatisfyMsg = "Unable to satisfy response from authorization service"
@@ -287,10 +292,10 @@ func (p *plugin) Account(context string, uid uint32, groups []string, path []str
 
 	stop_time := time.Now().Unix()
 	args := map[string]string{
-		"service":   "shell",
-		"protocol":  context,
-		"stop_time": strconv.FormatInt(stop_time, 10),
-		"timezone":  "UTC",
+		argService:  "shell",
+		argProtocol: context,
+		argStopTime: strconv.FormatInt(stop_time, 10),
+		argTimezone: "UTC",
 	}
 
 	return p.accountSend(user, ttyName, rhost, args, path)
@@ -378,8 +383,8 @@ func (p *plugin) Authorize(context string, uid uint32, groups []string, path []s
 		serv = "vyatta-exec"
 	}
 	args := map[string]string{
-		"service":  serv,
-		"protocol": context,
+		argService:  serv,
+		argProtocol: context,
 	}
 
 	respType, avDict, err := p.authorSend(user, tty, rhost, args, path)
