@@ -23,7 +23,7 @@ module vyatta-system-tacplus-broadcast-v1 {
 		 Web: www.att.com";
 
 	description
-		"Copyright (c) 2018-2019 AT&T Intellectual Property
+		"Copyright (c) 2018-2020 AT&T Intellectual Property
 		 All rights reserved.
 
 		 Copyright (c) 2016 by Brocade Communications Systems, Inc.
@@ -60,7 +60,7 @@ module vyatta-system-tacplus-broadcast-v1 {
 
 		 The YANG module for vyatta-system-tacplus-broadcast-v1";
 
-	revision 2019-03-18 {
+	revision 2020-08-05 {
 		description "Initial revision of version 1.";
 	}
 
@@ -68,18 +68,16 @@ module vyatta-system-tacplus-broadcast-v1 {
 		description "Session and command broadcast accounting to all configured TACACS+ servers.";
 	}
 
-	augment /system:system/tacplus:tacplus-options {
-		container accounting {
-			if-feature accounting-broadcast;
-			configd:end "vyatta-tacplusd-config";
-			leaf broadcast {
-				description "Select between round-robin and broadcast logging";
-				configd:help "Enable logging to all available servers";
-				type empty;
-				must "count(/system:system/system-login:login/tacplus:tacplus-server) <= 32" +
-					 " and count(/system:system/system-login:login/tacplus:tacplus-server) >= 4" {
-					error-message "Broadcast accounting is limited to between 4 and 32 servers";
-				}
+	augment /system:system/tacplus:tacplus-options/tacplus:accounting {
+		if-feature accounting-broadcast;
+		configd:end "vyatta-tacplusd-config";
+		leaf broadcast {
+			description "Select between round-robin and broadcast logging";
+			configd:help "Enable logging to all available servers";
+			type empty;
+			must "count(/system:system/system-login:login/tacplus:tacplus-server) <= 32" +
+				 " and count(/system:system/system-login:login/tacplus:tacplus-server) >= 4" {
+				error-message "Broadcast accounting is limited to between 4 and 32 servers";
 			}
 		}
 	}

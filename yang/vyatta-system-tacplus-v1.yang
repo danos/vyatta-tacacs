@@ -66,13 +66,14 @@ module vyatta-system-tacplus-v1 {
 
 		 The YANG module for vyatta-system-tacplus-v1";
 
-	revision 2020-07-06 {
+	revision 2020-08-05 {
 		description
 			"Add tacplus-common-server-options grouping.
 			 Add global server port, secret, and timeout configuration.
 			 Add configuration to disable individual TACACS+ servers.
 			 Allow whitespace in secrets.
-			 Increase maximum timeout to 120 seconds";
+			 Increase maximum timeout to 120 seconds.
+			 Add support for command accounting start records.";
 	}
 
 	revision 2019-05-06 {
@@ -169,6 +170,15 @@ module vyatta-system-tacplus-v1 {
 				type empty;
 				configd:priority "410";
 				configd:help "TACACS+ command accounting";
+			}
+			container accounting {
+				configd:help "TACACS+ accounting options";
+				description "TACACS+ accounting options";
+				container command-start-records {
+					presence "Command accounting start records will be generated";
+					configd:help "Generate command accounting start records";
+					description "Generate command accounting start records";
+				}
 			}
 			container command-authorization {
 				description "Enables TACACS+ command authorization for TACACS+ authenticated users.";

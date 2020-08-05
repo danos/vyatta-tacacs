@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 #
-# Copyright (c) 2018-2019 AT&T Intellectual Property.
+# Copyright (c) 2018-2020 AT&T Intellectual Property.
 # All rights reserved.
 #
 # SPDX-License-Identifier: GPL-2.0-only
@@ -17,9 +17,11 @@ from vyatta import configd
 
 CMD_AUTHOR = 'command-authorization'
 CMD_ACCT = 'command-accounting'
+ACCT = 'accounting'
 TACPLUS_OPT_PATH = ['system', 'tacplus-options']
 
 CMD_AUTHOR_CFG_OPTS = CMD_AUTHOR+"-options"
+CMD_ACCT_CFG_OPTS = CMD_ACCT+"-options"
 
 TACPLUS_CFG_PATH = '/etc/aaa-plugins/tacplus.json'
 
@@ -71,6 +73,10 @@ def main():
             cfg[CMD_AUTHOR_CFG_OPTS] = {}
             cfg[CMD_AUTHOR_CFG_OPTS]["service"] = \
                 cfg_tree[CMD_AUTHOR]["attributes"].get("service", "vyatta-exec")
+
+        cfg[CMD_ACCT_CFG_OPTS] = {
+            "start-records" : "command-start-records" in cfg_tree.get(ACCT, {})
+        }
 
     cur_cfg = get_plugin_config()
     if cur_cfg is None or cur_cfg != cfg:
