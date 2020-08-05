@@ -230,6 +230,28 @@ func dbusMethodCallError(method string, err error) error {
 	return fmt.Errorf("D-Bus %s failed: %s", method, err)
 }
 
+func (p *plugin) retryOnBusClosedErr(fn func() error, onClosedFn func()) error {
+	p.busMutex.Lock()
+	defer p.busMutex.Unlock()
+	err := p.openBusConn()
+	if err != nil {
+		return err
+	}
+
+	err = fn()
+	if err == dbus.ErrClosed {
+		if onClosedFn != nil {
+			onClosedFn()
+		}
+		err = p.restart()
+		if err == nil {
+			err = fn()
+		}
+	}
+
+	return err
+}
+
 func (p *plugin) doAccountSend(
 	username,
 	tty,
@@ -258,33 +280,20 @@ func (p *plugin) accountSend(
 	args map[string]string,
 	path []string,
 ) error {
-	var err error
 
-	defer func() {
-		if err != nil {
-			p.syslog(syslog.LOG_ERR, "Failed to account command %v with context "+
-				"%v for user %s (%s): %s", path, args, user.Username, user.Uid, err)
-		}
-	}()
+	err := p.retryOnBusClosedErr(
+		func() error {
+			return p.doAccountSend(user.Username, tty, rhost, args, path)
+		},
+		func() {
+			p.log("D-Bus connection closed error on attempt to account command %v "+
+				"for user %s (%s)", path, user.Username, user.Uid)
+		})
 
-	p.busMutex.Lock()
-	defer p.busMutex.Unlock()
-	err = p.openBusConn()
 	if err != nil {
-		return dbusMethodCallError(accountSendMethod, err)
+		p.syslog(syslog.LOG_ERR, "Failed to account command %v with context "+
+			"%v for user %s (%s): %s", path, args, user.Username, user.Uid, err)
 	}
-
-	err = p.doAccountSend(user.Username, tty, rhost, args, path)
-	if err == dbus.ErrClosed {
-		p.log("D-Bus connection closed error on attempt to account command %v "+
-			"for user %s (%s)", path, user.Username, user.Uid)
-
-		err = p.restart()
-		if err == nil {
-			err = p.doAccountSend(user.Username, tty, rhost, args, path)
-		}
-	}
-
 	return dbusMethodCallError(accountSendMethod, err)
 }
 
@@ -353,34 +362,24 @@ func (p *plugin) authorSend(
 	args map[string]string,
 	path []string,
 ) (int32, map[string]string, error) {
-	var err error
 
-	defer func() {
-		if err != nil {
-			p.syslog(syslog.LOG_ERR, "Failed to authorize command %v with context "+
-				"%v for user %s (%s): %s", path, args, user.Username, user.Uid, err)
-		}
-	}()
+	var respType int32
+	var avDict map[string]string
+	err := p.retryOnBusClosedErr(
+		func() error {
+			var err error
+			respType, avDict, err = p.doAuthorSend(user.Username, tty, rhost, args, path)
+			return err
+		},
+		func() {
+			p.log("D-Bus connection closed error on attempt to authorize command %v "+
+				"for user %s (%s)", path, user.Username, user.Uid)
+		})
 
-	p.busMutex.Lock()
-	defer p.busMutex.Unlock()
-	err = p.openBusConn()
 	if err != nil {
-		return -1, map[string]string{}, dbusMethodCallError(authorSendMethod, err)
+		p.syslog(syslog.LOG_ERR, "Failed to authorize command %v with context "+
+			"%v for user %s (%s): %s", path, args, user.Username, user.Uid, err)
 	}
-
-	respType, avDict, err := p.doAuthorSend(user.Username, tty, rhost, args, path)
-	if err == dbus.ErrClosed {
-		p.log("D-Bus connection closed error on attempt to authorize command %v "+
-			"for user %s (%s)", path, user.Username, user.Uid)
-
-		err = p.restart()
-		if err == nil {
-			respType, avDict, err = p.doAuthorSend(
-				user.Username, tty, rhost, args, path)
-		}
-	}
-
 	return respType, avDict, dbusMethodCallError(authorSendMethod, err)
 }
 
