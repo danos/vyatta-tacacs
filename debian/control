@@ -5,6 +5,7 @@ Maintainer: Vyatta Package Maintainers <DL-vyatta-help@att.com>
 Build-Depends: debhelper (>= 9),
          golang (>=2:1.4),
          golang-dbus-dev,
+         golang-github-danos-aaa-dev (>= 2.0),
          golang-github-danos-utils-pathutil-dev,
          dh-golang,
          dh-yang

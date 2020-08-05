@@ -8,6 +8,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/danos/aaa"
 	"github.com/danos/utils/pathutil"
 	"log"
 	"log/syslog"
@@ -37,6 +38,22 @@ type plugin struct {
 	conn     *dbus.Conn
 	busObj   dbus.BusObject
 	busMutex sync.Mutex
+}
+
+type task struct {
+	p     *plugin
+	user  *user.User
+	tty   string
+	rhost string
+	args  map[string]string
+	path  []string
+}
+
+func (p *plugin) newTask() task {
+	t := task{}
+	t.p = p
+	t.args = make(map[string]string)
+	return t
 }
 
 const (
@@ -271,34 +288,43 @@ func (p *plugin) accountSend(
 	return dbusMethodCallError(accountSendMethod, err)
 }
 
-func (p *plugin) Account(context string, uid uint32, groups []string, path []string,
-	pathAttrs *pathutil.PathAttrs, env map[string]string) error {
+func (t task) AccountStart() error {
+	// Not supported
+	return nil
+}
+
+func (t task) AccountStop(_ *error) error {
+	t.args[argStopTime] = strconv.FormatInt(time.Now().Unix(), 10)
+	return t.p.accountSend(t.user, t.tty, t.rhost, t.args, t.path)
+}
+
+func (p *plugin) NewTask(context string, uid uint32, groups []string, path []string,
+	pathAttrs *pathutil.PathAttrs, env map[string]string) (aaa.AAATask, error) {
+
+	var err error
 
 	p.debugStack("Accounting request for %v: uid:%v context:%v", path, uid, context)
 
-	path, err := redactPath(path, pathAttrs)
+	t := p.newTask()
+	t.path, err = redactPath(path, pathAttrs)
 	if err != nil {
-		return err
+		return nil, err
 	}
+
+	t.user, err = lookupUserByUid(uid)
+	if err != nil {
+		return nil, err
+	}
+
+	t.args[argService] = "shell"
+	t.args[argProtocol] = context
+	t.args[argTimezone] = "UTC"
 
 	/* Best effort */
-	ttyName, _ := env["tty"]
-	rhost := ""
+	t.tty, _ = env["tty"]
+	t.rhost = ""
 
-	user, err := lookupUserByUid(uid)
-	if err != nil {
-		return err
-	}
-
-	stop_time := time.Now().Unix()
-	args := map[string]string{
-		argService:  "shell",
-		argProtocol: context,
-		argStopTime: strconv.FormatInt(stop_time, 10),
-		argTimezone: "UTC",
-	}
-
-	return p.accountSend(user, ttyName, rhost, args, path)
+	return t, nil
 }
 
 func (p *plugin) doAuthorSend(
@@ -448,5 +474,5 @@ func (p *plugin) ValidUser(uid uint32, groups []string) (bool, error) {
 	return false, nil
 }
 
-var AAAPluginV1 plugin
-var AAAPluginAPIVersion uint32 = 1
+var AAAPluginV2 plugin
+var AAAPluginAPIVersion uint32 = 2
