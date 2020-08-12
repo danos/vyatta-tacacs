@@ -57,11 +57,16 @@ module vyatta-op-reset-tacplus-v1 {
 
          This module implements reset operational CLI for TACACS+";
 
-    revision 2020-02-28 {
+    revision 2020-08-12 {
         description "Initial revision";
     }
 
+    feature reset-login-tacplus {
+        description "Toggle the 'reset system login tacplus' operational command";
+    }
+
     opd:augment /op-reset:reset/op-reset-system:system/op-reset-system-login:login {
+        if-feature reset-login-tacplus;
         opd:command tacplus {
             opd:help "Attempt to bring TACACS+ login services online";
             opd:privileged true;
