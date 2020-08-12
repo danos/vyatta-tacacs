@@ -99,9 +99,13 @@ def getVRFName():
     env.close()
     return vrfName
 
-def printEachServer():
-    output = f'Routing-instance: {getVRFName()}\n\n'
+def printEachServer(offline_remaining):
+    output = f'Routing-instance: {getVRFName()}\n'
 
+    if offline_remaining > 0:
+        output += f'Offline timer active, expiring in: {offline_remaining}s\n'
+
+    output += '\n'
     for server in allServers:
         output += 'Server address: ' + server.getAddr()
 
@@ -160,7 +164,7 @@ def printEachServer():
 allServers = [] # TacacsServer
 
 try:
-    status_list = tacplus.Daemon().get_status()
+    offline_remaining, status_list = tacplus.Daemon().get_status()
 except tacplus.DaemonNotRunning as e:
     utils.print_err("Tacplus daemon is not running.")
     exit(1)
@@ -193,6 +197,6 @@ for vals in status_list:
     addServer(tacacsServer)
 
 if allServers:
-    printEachServer()
+    printEachServer(offline_remaining)
 else:
     print('No TACACS+ servers are enabled')
