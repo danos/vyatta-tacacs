@@ -92,8 +92,7 @@ def addServer(tacacsServer):
 def getVRFName():
     vrfName = ''
     env = open(envFile)
-    line = env.readline()
-    line.rstrip('\n')
+    line = env.readline().rstrip('\n')
     if line:
         vrf = line.split('=')
         vrfName = vrf[1];
@@ -101,10 +100,7 @@ def getVRFName():
     return vrfName
 
 def printEachServer():
-    output = ''
-    vrf = getVRFName()
-    if vrf != "default":
-        output += 'Routing-instance: ' + vrf + '\n'
+    output = f'Routing-instance: {getVRFName()}\n\n'
 
     for server in allServers:
         output += 'Server address: ' + server.getAddr()

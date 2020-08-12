@@ -12,6 +12,7 @@ Build-Depends: debhelper (>= 9),
          dh-yang,
          python3
 Standards-Version: 3.9.8
+X-Python3-Version: >= 3.6
 
 Package: vyatta-tacacs
 Architecture: all
