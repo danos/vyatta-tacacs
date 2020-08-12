@@ -19,7 +19,7 @@ DH_GOLANG_VER := $(shell dpkg-query -W -f='$${Version}' dh-golang)
 BUILD_ARGS_GO := $(if $(shell dpkg --compare-versions $(DH_GOLANG_VER) ge 1.38 && echo true),-gcflags=all=-trimpath="$(GO_PATH)/src" -asmflags=all=-trimpath="$(GO_PATH)/src",)
 
 %:
-	dh $@ --with yang,golang --buildsystem=golang --builddirectory=$(GOBUILDDIR)
+	dh $@ --with yang,golang,python3 --buildsystem=golang --builddirectory=$(GOBUILDDIR)
 
 override_dh_auto_build: vet
 	# configd/opd AAA plugin

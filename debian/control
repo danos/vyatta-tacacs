@@ -8,7 +8,9 @@ Build-Depends: debhelper (>= 9),
          golang-github-danos-aaa-dev (>= 2.0),
          golang-github-danos-utils-pathutil-dev,
          dh-golang,
-         dh-yang
+         dh-python,
+         dh-yang,
+         python3
 Standards-Version: 3.9.8
 
 Package: vyatta-tacacs
@@ -25,7 +27,8 @@ Depends: vyatta-system | vyatta-cfg-system,
          libpam-runtime (>= 1.0.5),
          python3-dbus, python3,
          ${misc:Depends},
-         ${perl:Depends}
+         ${perl:Depends},
+         ${python3:Depends}
 Provides: tacplus
 Replaces: tacplus
 Conflicts: tacplus

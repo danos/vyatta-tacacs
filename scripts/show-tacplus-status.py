@@ -17,11 +17,10 @@
 
 import socket
 
-import dbus
-envFile = "/var/run/tacplus.env";
+from vyatta import tacplus
+from vyatta.tacplus import utils
 
-TACPLUS_DAEMON      = "net.vyatta.tacplus"
-TACPLUS_DAEMON_PATH = "/net/vyatta/tacplus"
+envFile = "/var/run/tacplus.env"
 
 class TacacsServer (object):
     def __init__(self, addr, port, src,
@@ -164,25 +163,14 @@ def printEachServer():
 ####### BEGIN #######
 allServers = [] # TacacsServer
 
-bus = dbus.SystemBus()
-
-# The daemon does not yet support introspection. There are plans to add
-# this though.
 try:
-    daemon = bus.get_object(TACPLUS_DAEMON, TACPLUS_DAEMON_PATH, introspect=False)
-
-except:
-    print('Tacplus daemon is not running.')
-    exit(0)
-
-try:
-    get_status = daemon.get_dbus_method('get_status', TACPLUS_DAEMON)
-
-except:
-    print('Failed to retrieve tacplus daemon status.')
-    exit(0)
-
-status_list = get_status()
+    status_list = tacplus.Daemon().get_status()
+except tacplus.DaemonNotRunning as e:
+    utils.print_err("Tacplus daemon is not running.")
+    exit(1)
+except Exception as e:
+    utils.print_err(e)
+    exit(1)
 
 for vals in status_list:
     split_vals = vals.split(',')
