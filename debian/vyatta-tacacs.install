@@ -2,6 +2,7 @@ scripts/1050-tacplus opt/vyatta/share/vyatta-op/functions/tech-support.d
 scripts/show-tacplus-status.py opt/vyatta/sbin
 scripts/vyatta_system_update_aaa_tacplus opt/vyatta/sbin
 scripts/vyatta-tacplusd-config opt/vyatta/sbin
+scripts/vyatta-tacplus-op opt/vyatta/bin
 scripts/vyatta-tacplus-rpc opt/vyatta/sbin
 lib/vyatta usr/lib/python3/dist-packages
 lib/Vyatta opt/vyatta/share/perl5

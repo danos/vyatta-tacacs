@@ -1,0 +1,29 @@
+#!/usr/bin/python3
+
+# Copyright (c) 2020 AT&T Intellectual Property.
+# All rights reserved.
+#
+# SPDX-License-Identifier: GPL-2.0-only
+
+import argparse
+
+from vyatta.tacplus import utils
+
+OPS = {}
+
+def main():
+    parser = argparse.ArgumentParser(description="TACACS+ operations")
+    parser.add_argument("operation", action="store", choices=OPS.keys(),
+                        help="Operation name")
+    args = parser.parse_args()
+
+    try:
+        return OPS[args.operation]()
+    except configd.Exception as e:
+        utils.print_err(e)
+    except Exception as e:
+        utils.print_err(f"An unexpected error occurred during operation '{args.operation}': {e}")
+    return -1
+
+if __name__ == "__main__":
+    exit(main())
