@@ -65,6 +65,17 @@ module vyatta-op-reset-tacplus-v1 {
         description "Toggle the 'reset system login tacplus' operational command";
     }
 
+    opd:augment /op-reset:reset/op-reset-system:system {
+        opd:command tacplus {
+            opd:help "Reset TACACS+ state";
+
+            opd:command suppression-timers {
+                opd:help "Reset TACACS+ hold-down/offline timers";
+                opd:on-enter "vyatta-tacplus-op reset-suppression-timers";
+            }
+        }
+    }
+
     opd:augment /op-reset:reset/op-reset-system:system/op-reset-system-login:login {
         if-feature reset-login-tacplus;
         opd:command tacplus {

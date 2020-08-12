@@ -7,9 +7,19 @@
 
 import argparse
 
+from vyatta import configd
 from vyatta.tacplus import utils
 
-OPS = {}
+TACPLUS_MODULE = "vyatta-system-tacplus-v1"
+
+def reset_suppression_timers():
+    c = configd.Client()
+    c.call_rpc(TACPLUS_MODULE, "reset-suppression-timers", "{}")
+    return 0
+
+OPS = {
+    "reset-suppression-timers" : reset_suppression_timers
+}
 
 def main():
     parser = argparse.ArgumentParser(description="TACACS+ operations")
