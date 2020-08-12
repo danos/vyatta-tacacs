@@ -74,7 +74,8 @@ module vyatta-system-tacplus-v1 {
 			 Allow whitespace in secrets.
 			 Increase maximum timeout to 120 seconds.
 			 Add support for command accounting start records.
-			 Add offline-timer configuration.";
+			 Add offline-timer configuration.
+			 Add reset-suppression-timers RPC.";
 	}
 
 	revision 2019-05-06 {
@@ -119,6 +120,27 @@ module vyatta-system-tacplus-v1 {
 		description
 			"Enable source-interface configuration for a
 			 TACACS+ server connection";
+	}
+
+	rpc reset-suppression-timers {
+		description
+			"Resets all running TACACS+ suppression timers:
+			   * Per-server hold-down timers
+			   * The global offline timer
+
+			 While a server has a running hold-down timer it will not be used
+			 for TACACS+ transactions. Use this RPC to allow such servers to be
+			 used without waiting for their hold-down timer to expire.
+
+			 If all per-server hold-down timers, or the global offline timer,
+			 are running all TACACS+ operations are suspended. Use this RPC
+			 to resume TACACS+ operations.
+
+			 Depending upon the operational status of the configured TACACS+
+			 servers, some or all of the timers may be re-activated shortly
+			 after calling this RPC.";
+
+		configd:call-rpc "vyatta-tacplus-rpc reset-suppression-timers";
 	}
 
 	grouping tacplus-common-server-options {

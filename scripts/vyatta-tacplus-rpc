@@ -10,7 +10,13 @@ import argparse
 from vyatta import tacplus
 from vyatta.tacplus import utils
 
-RPCS = {}
+def reset_suppression_timers():
+    tacplus.Daemon().reset_timers()
+    return 0
+
+RPCS = {
+    "reset-suppression-timers" : reset_suppression_timers
+}
 
 def main():
     parser = argparse.ArgumentParser(description="TACACS+ RPCs")
