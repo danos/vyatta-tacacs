@@ -19,7 +19,8 @@ if ($exists) {
     my $config = Vyatta::Config->new();
 
     if (   $config->isChanged($Vyatta::Login::TacplusServer::TACACS_GLOBAL_PATH)
-        || $config->isChanged($Vyatta::Login::TacplusServer::TACACS_OFFLINE_TIMER) )
+        || $config->isChanged($Vyatta::Login::TacplusServer::TACACS_OFFLINE_TIMER)
+        || $config->isChanged($Vyatta::Login::TacplusServer::TACACS_LOG_PATH) )
     {
         Vyatta::Login::TacplusServer::setup_tacacs_path("changed");
         Vyatta::Login::TacplusServer::setup_tacplusd( "changed", $exists );

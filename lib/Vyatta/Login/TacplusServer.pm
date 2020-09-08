@@ -25,6 +25,7 @@ use File::Slurp;
 use Net::IP;
 use POSIX qw(:signal_h);
 use Readonly;
+use Sys::Syslog qw (LOG_NOTICE LOG_DEBUG);
 
 use lib "/opt/vyatta/share/perl5";
 use Vyatta::Config;
@@ -36,10 +37,12 @@ Readonly my $TACACS_CFG => "/etc/tacplus/server";
 Readonly my $TACACS_TMP => "/tmp/tacplus_server.$$";
 Readonly my $TACACS_PATH_DEFAULT => 'system login tacplus-server';
 Readonly my $TACACS_PATH_VRF => 'routing routing-instance';
-Readonly our $TACACS_GLOBAL_PATH => 'system tacplus-options server';
-Readonly our $TACACS_OFFLINE_TIMER => 'system tacplus-options offline-timer';
-Readonly my $TACACS_ACCOUNTING_PATH => 'system tacplus-options command-accounting';
-Readonly my $TACACS_ACCOUNTING_BROADCAST_PATH => 'system tacplus-options accounting broadcast';
+Readonly my $TACACS_OPT => 'system tacplus-options';
+Readonly our $TACACS_LOG_PATH => $TACACS_OPT.' log';
+Readonly our $TACACS_GLOBAL_PATH => $TACACS_OPT.' server';
+Readonly our $TACACS_OFFLINE_TIMER => $TACACS_OPT.' offline-timer';
+Readonly my $TACACS_ACCOUNTING_PATH => $TACACS_OPT.' command-accounting';
+Readonly my $TACACS_ACCOUNTING_BROADCAST_PATH => $TACACS_OPT.' accounting broadcast';
 
 Readonly my $SSSD_TACPLUS_SCRIPT => "/opt/vyatta/sbin/vyatta_update_tacplus_server";
 Readonly my $PAM_AUTH_UPDATE_TACACS => "/opt/vyatta/sbin/vyatta_tacacs_pam_auth_update";
@@ -144,6 +147,9 @@ sub setup_tacplusd {
                "# automatically generated do not edit\n";
 
     print $cfg "\n[general]\n";
+
+    printf $cfg "LogLevel=%d\n",
+        ($rconfig->exists("$TACACS_LOG_PATH debug") ? LOG_DEBUG : LOG_NOTICE);
 
     printf $cfg "BroadcastAccounting=%s\n", ($rconfig->exists($TACACS_ACCOUNTING_BROADCAST_PATH) ? "true" : "false");
 

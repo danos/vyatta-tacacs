@@ -66,7 +66,7 @@ module vyatta-system-tacplus-v1 {
 
 		 The YANG module for vyatta-system-tacplus-v1";
 
-	revision 2020-08-12 {
+	revision 2020-09-08 {
 		description
 			"Add tacplus-common-server-options grouping.
 			 Add global server port, secret, and timeout configuration.
@@ -75,7 +75,8 @@ module vyatta-system-tacplus-v1 {
 			 Increase maximum timeout to 120 seconds.
 			 Add support for command accounting start records.
 			 Add offline-timer configuration.
-			 Add reset-suppression-timers RPC.";
+			 Add reset-suppression-timers RPC.
+			 Add log container.";
 	}
 
 	revision 2019-05-06 {
@@ -226,6 +227,19 @@ module vyatta-system-tacplus-v1 {
 							}
 						}
 					}
+				}
+			}
+			container log {
+				configd:help "TACACS+ logging options";
+				description "TACACS+ logging options";
+
+				leaf debug {
+					configd:help "Enable debug logs";
+					description "Enables debug logs.
+
+						Note: debug logs can contain details of executed
+							  commands and their arguments.";
+					type empty;
 				}
 			}
 			leaf offline-timer {
