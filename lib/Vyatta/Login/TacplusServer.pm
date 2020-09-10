@@ -302,6 +302,14 @@ sub setup_tacacs_path {
     }
 }
 
+sub get_pid_max {
+    open(my $fh, '<', '/proc/sys/kernel/pid_max')
+        or die("Failed to open /proc/sys/kernel/pid_max: $!");
+    chomp(my $pid_max = <$fh>);
+    close($fh);
+    return $pid_max;
+}
+
 sub write_name_env {
     $TACACS_VRF = ( defined($TACACS_VRF) ? $TACACS_VRF : 'default' );
     #write vrf to the env file for tacacs 
@@ -309,6 +317,7 @@ sub write_name_env {
         or die "Can't open env file: $TACACS_ENV ($!)";
     chmod(0600, $env);
     print $env "VRF=$TACACS_VRF\n";
+    printf $env "ARGS=--min-task-id=%d\n", get_pid_max()+1;
     close($env);
 }
 
