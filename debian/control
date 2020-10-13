@@ -15,6 +15,7 @@ Architecture: all
 Depends: vyatta-system | vyatta-cfg-system,
          vyatta-cfg,
          vyatta-sssd-cfg,
+         libipc-run3-perl,
          libnet-ip-perl,
          libpam-runtime (>= 1.0.5),
          libreadonly-perl,

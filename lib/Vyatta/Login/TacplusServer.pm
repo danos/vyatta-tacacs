@@ -22,6 +22,7 @@ use warnings;
 use File::Compare;
 use File::Copy "cp";
 use File::Slurp;
+use IPC::Run3;
 use Net::IP;
 use POSIX qw(:signal_h);
 use Readonly;
@@ -207,6 +208,9 @@ sub setup_tacplusd {
         print $env "CONFIG=$TACACS_CFG\-$TACACS_VRF\n";
         close($env);
     }
+
+    # Ensure we don't hit the start limit
+    run3(["systemctl", "reset-failed", $TACPLUSD], \undef, \undef, \undef);
 
     if ($gstatus eq "added") {
         # Initial TACACS+ config has been added, or it has switched VRFs.
