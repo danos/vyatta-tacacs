@@ -66,6 +66,10 @@ module vyatta-system-tacplus-v1 {
 
 		 The YANG module for vyatta-system-tacplus-v1";
 
+	revision 2020-10-13 {
+		description "Set configd:priority 400 on the tacplus-options container";
+	}
+
 	revision 2019-05-06 {
 		description "Add global DSCP value configuration";
 	}
@@ -114,6 +118,7 @@ module vyatta-system-tacplus-v1 {
 		container tacplus-options {
 			presence "TACACS+ options have been configured";
 			configd:end "/opt/vyatta/sbin/vyatta_system_update_aaa_tacplus";
+			configd:priority "400";
 			description 'TACACS+ parameters allow individual TACACS+ AAA functionality
 					to be enabled.
 
@@ -129,7 +134,6 @@ module vyatta-system-tacplus-v1 {
 			leaf command-accounting {
 				description "Enables TACACS+ command accounting for all users.";
 				type empty;
-				configd:priority "410";
 				configd:help "TACACS+ command accounting";
 			}
 			container command-authorization {
