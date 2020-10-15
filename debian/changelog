@@ -1,3 +1,11 @@
+vyatta-tacacs (1.29.1) unstable; urgency=medium
+
+  * yang: Set tacplus-options tree to priority 400
+  * TacplusServer.pm: Call "systemctl reset-failed"
+  * vyatta-system-tacplus-v1: Update copyright
+
+ -- Duncan Eastoe <duncan.eastoe@att.com>  Thu, 15 Oct 2020 18:46:19 +0100
+
 vyatta-tacacs (1.29) unstable; urgency=medium
 
   * Drop tacplusd@.service
