@@ -1,3 +1,34 @@
+vyatta-tacacs (1.30) unstable; urgency=medium
+
+  * tacplus.go: Pass timezone to cmd_account_send()
+  * yang: move common server options to grouping
+  * yang: global server port, secret, & timeout cfg
+  * Add ability to disable TACACS+ server via config
+  * yang: allow whitespace in secret
+  * yang: increase max timeout to 120 seconds
+  * debian/control: use ${misc:Built-Using}
+  * tacplus.go: define constants for known AV args
+  * tacplus.go: Migrate to aaa plugin API v2
+  * tacplus.go: Add retryOnBusClosedErr() utility
+  * tacplus.go: pass flags through [do]accountSend()
+  * tacplus.go: accounting start record support
+  * yang: Add cfg to enable cmd acct start records
+  * yang: Add offline-timer configuration
+  * lib: add tacplus Python 3 module
+  * show-tacplus-status.py: Cleanup VRF name handling
+  * show-tacplus-status.py: Show offline timer period
+  * yang: Define reset-login-tacplus feature
+  * scripts: Add generic RPC handler script
+  * Add reset-suppression-timers RPC
+  * scripts: Add generic operation handler script
+  * Add "reset system tacplus suppression-timers" cmd
+  * Add "system tacplus-options log debug" config
+  * TacplusServer.pm: Set --min-task-id to pid_max
+  * yang: Set tacplus-options tree to priority 400
+  * TacplusServer.pm: Call "systemctl reset-failed"
+
+ -- Duncan Eastoe <duncan.eastoe@att.com>  Thu, 15 Oct 2020 18:41:31 +0100
+
 vyatta-tacacs (1.29) unstable; urgency=medium
 
   * Drop tacplusd@.service
