@@ -29,4 +29,5 @@ override_dh_auto_build: vet
 		-o tacplus.so eng.vyatta.net/tacplus/aaa-plugin/
 
 vet:
-	go tool vet $$(find . -type f -name \*.go | xargs dirname | sort -u | grep -v "/vendor/");
+	GOPATH=$(GO_PATH) go vet $$(find . -type f -name \*.go | \
+	xargs dirname | sort -u | grep -v "/vendor/");
