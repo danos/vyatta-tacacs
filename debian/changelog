@@ -1,3 +1,10 @@
+vyatta-tacacs (1.31) unstable; urgency=medium
+
+  [ Nicholas Brown ]
+  * Use 'go vet' instead of 'go tool vet'
+
+ -- Daniel Gollub <dgollub@att.com>  Thu, 11 Mar 2021 12:46:48 +0100
+
 vyatta-tacacs (1.30) unstable; urgency=medium
 
   * tacplus.go: Pass timezone to cmd_account_send()
