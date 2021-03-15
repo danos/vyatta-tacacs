@@ -100,10 +100,10 @@ def getVRFName():
     return vrfName
 
 def printEachServer(offline_remaining):
-    output = f'Routing-instance: {getVRFName()}\n'
+    output = 'Routing-instance: {}\n'.format(getVRFName())
 
     if offline_remaining > 0:
-        output += f'Offline timer active, expiring in: {offline_remaining}s\n'
+        output += 'Offline timer active, expiring in: {}s\n'.format(offline_remaining)
 
     output += '\n'
     for server in allServers:
