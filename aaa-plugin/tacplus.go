@@ -380,6 +380,35 @@ func (p *plugin) NewTask(context string, uid uint32, groups []string, path []str
 	return t, nil
 }
 
+func (p *plugin) Account(context string, uid uint32, groups []string, path []string,
+	pathAttrs *pathutil.PathAttrs, env map[string]string) error {
+
+	p.debugStack("Accounting request for %v: uid:%v context:%v", path, uid, context)
+
+	path, err := redactPath(path, pathAttrs)
+	if err != nil {
+		return err
+	}
+
+	/* Best effort */
+	ttyName, _ := env["tty"]
+	rhost := ""
+
+	user, err := lookupUserByUid(uid)
+	if err != nil {
+		return err
+	}
+
+	stop_time := time.Now().Unix()
+	args := map[string]string{
+		"service":   "shell",
+		"protocol":  context,
+		"stop_time": strconv.FormatInt(stop_time, 10),
+	}
+
+	return p.accountSend(user, ttyName, rhost, args, path, TAC_PLUS_ACCT_FLAG_STOP)
+}
+
 func (p *plugin) doAuthorSend(
 	username,
 	tty,
