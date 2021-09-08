@@ -5,18 +5,27 @@ export DH_GOPKG := eng.vyatta.net/tacplus
 GOBUILDDIR := _build
 GO_PATH := $(CURDIR)/$(GOBUILDDIR)
 
-# From version 1.38 onwards, dh-golang inserts the all/trimpath flags into
-# any build that is not manually overridden.  We therefore need to match this
-# for the plugins to load - if we don't, they will fail to load due to a
-# package mismatch error (which in reality means the path to the common yang
-# repo is different prior to the GOPATH root directory).
+# For golang plugins to work with the modules that load them, the paths to
+# common code must match when building. This means that we need to use
+# GOBUILDDIR in both plugin and plugin-using code so that the paths match.
+# This is somewhat fragile, but does appear to work consistently.
 #
-# Prior to version 1.38, dh-golang does not use these flags, so we don't
-# either.  This requires that we use GOBUILDDIR in both plugin and plugin-
-# using code so the paths match, which is fragile, but proven to work.
+# From version 1.38, dh-golang inserts the all/trimpath flags into any build
+# that is not manually overridden, which matches a change made in Go 1.10.
+#
+# A further change was made in dh-golang 1.45 to match a change in Go 1.13
+# where the build flags were simplified from all/trimpath=... to just using
+# trimpath with no path specified.
 #
 DH_GOLANG_VER := $(shell dpkg-query -W -f='$${Version}' dh-golang)
-BUILD_ARGS_GO := $(if $(shell dpkg --compare-versions $(DH_GOLANG_VER) ge 1.38 && echo true),-gcflags=all=-trimpath="$(GO_PATH)/src" -asmflags=all=-trimpath="$(GO_PATH)/src",)
+
+ifeq (true,$(shell dpkg --compare-versions $(DH_GOLANG_VER) ge 1.45 && echo true))
+	BUILD_ARGS_GO := -trimpath -v
+else ifeq (true,$(shell dpkg --compare-versions $(DH_GOLANG_VER) ge 1.38 && echo true))
+	BUILD_ARGS_GO := -gcflags=all=-trimpath="$(GO_PATH)/src" -asmflags=all=-trimpath="$(GO_PATH)/src"
+else
+	BUILD_ARGS :=
+endif
 
 %:
 	dh $@ --with yang,golang,python3 --buildsystem=golang --builddirectory=$(GOBUILDDIR)
