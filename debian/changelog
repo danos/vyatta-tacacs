@@ -1,3 +1,10 @@
+vyatta-tacacs (1.33) unstable; urgency=medium
+
+  [ William Ivory ]
+  * Make plugin build flags match default flags
+
+ -- Daniel Gollub <dgollub@att.com>  Fri, 10 Sep 2021 09:53:23 +0200
+
 vyatta-tacacs (1.32) unstable; urgency=medium
 
   * debian: relax python3 version dependency
